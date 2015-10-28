@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Testmap</title>
+  <meta charset="utf-8" />
+  <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+  <script src="http://matchingnotes.com/javascripts/leaflet-google.js"></script>
+  <style>
+  @import url(http://cdn.leafletjs.com/leaflet-0.7/leaflet.css);
+  #overlay{
+   fill:None;
+   stroke:#ff00ff;
+   stroke-width:4px;
+  }
+  </style>
+</head>
+<body>
+  <div id="map" style="width: 1200px; height: 700px"></div>
+  <script>
+  var map = L.map('map').setView([-15.7799, -47.7965], 10);
+  var toolserver = L.tileLayer('http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png');
+  var stamen = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'Add some attributes here!'}).addTo(map);
+  var googleLayer = new L.Google('ROADMAP');
+  var baseLayers = {"stamen": stamen, "toolserver-mapnik":toolserver, "googleLayer": googleLayer};
+  
+
+  // var geojson = L.geoJson(roads, {
+  //     onEachFeature: onEachFeature
+  // }).addTo(map)
+
+  var overlays = {
+          //"geoJson": geojson
+    };
+  
+  function onEachFeature(feature, layer){
+    if (feature.properties) {
+        layer.bindPopup("<b>" + feature.properties.setor + "</b> " + feature.properties.quadra + ".");
+    }
+  }
+  var svgContainer= d3.select(map.getPanes().overlayPane).append("svg");
+  var group= svgContainer.append("g").attr("class", "leaflet-zoom-hide");
+   
+  d3.json("quadra.json", function(collection) {
+    
+    //console.log([collection])
+    
+    var roadsTest = [collection];
+
+    var geojson_d3 = L.geoJson(roadsTest, {
+        onEachFeature: onEachFeature
+    })
+
+    overlays["jsond3_quadra"] = geojson_d3;
+    //console.log(overlays)
+    
+
+  })
+  d3.json("lote.json", function(collection) {
+    
+   // console.log([collection])
+    
+    var roadsTest = [collection];
+
+    var geojson_d3 = L.geoJson(roadsTest, {
+        onEachFeature: onEachFeature
+    })
+    overlays["jsond3_lote"] = geojson_d3;
+    
+
+  })
+  d3.json("http://www.morarbem.df.gov.br/consultas/geo", function(collection) {
+    window.setTimeout(function() { 
+      var control = L.control.layers(baseLayers, overlays).addTo(map);
+    }, 800) 
+    console.log([collection])
+    
+      var roadsTest = [collection];
+      var geojson_d3 = L.geoJson(roadsTest, {
+          onEachFeature: onEachFeature,
+          pointToLayer:
+              function (feature, latlng) {
+                radius = feature.properties.Total > 1000 ?  ((feature.properties.Total/ 1000)  + 10) : ((feature.properties.Total/ 100) + 10)
+                faixa = [feature.properties.Zone1,feature.properties.Zone2,feature.properties.Zone3,feature.properties.Zone4]
+                var maior = Math.max.apply(null, faixa )
+                if(feature.properties.Zone1 == maior )
+                  color = "#00CC00"
+                else if(feature.properties.Zone2 == maior )
+                  color = "#006699"
+                else if(feature.properties.Zone3 == maior )
+                  color = "#FF4500"
+                else if(feature.properties.Zone4 == maior )
+                  color = "#FF0000"
+                return L.circleMarker(latlng, {
+                  radius: radius,
+                  fillColor: color,
+                  color: color,
+                  weight: 1,
+                  opacity: 1,
+                  fillOpacity: 0.6
+                })
+              }
+      })
+    
+    
+    overlays["jsond3_Pontos"] = geojson_d3;
+    
+
+  })
+  //console.log(overlays)
+  //var control = L.control.layers(baseLayers, overlays).addTo(map);
+  
+  </script>
+ </body>
+</html>
